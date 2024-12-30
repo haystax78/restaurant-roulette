@@ -91,52 +91,82 @@
 
 <style>
 .confetti {
-    position: fixed;
+    position: absolute;
     width: 8px;
     height: 8px;
-    z-index: 1000;
-    animation: confetti-fall linear forwards;
+    z-index: -1;
+    will-change: transform;
 }
 
-@keyframes confetti-fall {
+@keyframes gravity {
     0% {
-        transform: translateY(-10vh) rotate(0deg);
-        opacity: 1;
+        transform: translateY(0) translateX(0) rotate(0deg);
     }
     100% {
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
+        transform: translateY(1000px) translateX(var(--final-x)) rotate(360deg);
     }
 }
 </style>
 
 <script>
-function createConfetti() {
+function createConfetti(sourceElement) {
     const colors = ['#ff4136', '#2ecc40', '#0074d9', '#ffdc00', '#b10dc9', '#ff851b'];
+    const rect = sourceElement.getBoundingClientRect();
+    const startX = rect.left + rect.width / 2;
+    const startY = rect.top + rect.height / 2;
+    
+    // Create container relative to the source element
     const confettiContainer = document.createElement('div');
     confettiContainer.style.position = 'fixed';
-    confettiContainer.style.top = '0';
     confettiContainer.style.left = '0';
+    confettiContainer.style.top = '0';
     confettiContainer.style.width = '100%';
     confettiContainer.style.height = '100%';
     confettiContainer.style.pointerEvents = 'none';
-    confettiContainer.style.zIndex = '1000';
+    confettiContainer.style.zIndex = '-1';
     document.body.appendChild(confettiContainer);
 
-    for (let i = 0; i < 150; i++) {
+    const numConfetti = 100;
+    const gravity = 800; // pixels per second squared
+    const initialSpeed = 600; // pixels per second
+    const spread = 45; // degrees (half of 90 degree cone)
+    
+    for (let i = 0; i < numConfetti; i++) {
         const confetti = document.createElement('div');
         confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + 'vw';
+        
+        // Initial position at the source
+        confetti.style.left = startX + 'px';
+        confetti.style.top = startY + 'px';
         confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
-        confetti.style.animationDelay = (Math.random() * 2) + 's';
-        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+        
+        // Calculate initial trajectory
+        const angle = (-spread + Math.random() * (spread * 2)) * (Math.PI / 180);
+        const velocity = (initialSpeed * 0.8) + (Math.random() * initialSpeed * 0.4);
+        const vx = Math.sin(angle) * velocity;
+        const vy = -Math.cos(angle) * velocity; // Negative because Y increases downward
+        
+        // Calculate animation duration based on physics
+        // Time to reach highest point: vy / gravity
+        // Time to fall back down: sqrt(2 * height / gravity)
+        const timeToTop = -vy / gravity;
+        const maxHeight = (-vy * -vy) / (2 * gravity);
+        const totalTime = timeToTop + Math.sqrt(2 * (maxHeight + 1000) / gravity);
+        
+        // Calculate final X position
+        const finalX = vx * totalTime;
+        confetti.style.setProperty('--final-x', `${finalX}px`);
+        
+        // Apply animation
+        confetti.style.animation = `gravity ${totalTime}s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`;
+        
         confettiContainer.appendChild(confetti);
     }
 
+    // Clean up after the longest animation
     setTimeout(() => {
         confettiContainer.remove();
-    }, 7000);
+    }, 5000);
 }
 
 document.getElementById('spinButton').addEventListener('click', function() {
@@ -171,7 +201,11 @@ document.getElementById('spinButton').addEventListener('click', function() {
                             <div class="alert alert-success result-animation">
                                 <h3 class="mb-0"> ${data.name} </h3>
                             </div>`;
-                        createConfetti();
+                        // Wait for the result element to be rendered
+                        setTimeout(() => {
+                            const resultElement = resultDiv.querySelector('.alert');
+                            createConfetti(resultElement);
+                        }, 50);
                     }
                     button.disabled = false;
                     drumRoll.style.display = 'none';
