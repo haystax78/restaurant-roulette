@@ -4,7 +4,8 @@ import os
 import random
 import asyncio
 from dotenv import load_dotenv
-from postgrest import PostgrestClient
+from postgrest import AsyncPostgrestClient
+import httpx
 
 load_dotenv()
 
@@ -12,46 +13,62 @@ app = Flask(__name__)
 
 # Initialize PostgREST client
 postgrest_url = f"{os.getenv('SUPABASE_URL')}/rest/v1"
-postgrest = PostgrestClient(
-    base_url=postgrest_url,
-    headers={
-        "apikey": os.getenv('SUPABASE_KEY'),
-        "Authorization": f"Bearer {os.getenv('SUPABASE_KEY')}"
-    }
-)
+
+async def get_client():
+    async with httpx.AsyncClient() as client:
+        postgrest = AsyncPostgrestClient(
+            base_url=postgrest_url,
+            headers={
+                "apikey": os.getenv('SUPABASE_KEY'),
+                "Authorization": f"Bearer {os.getenv('SUPABASE_KEY')}"
+            },
+            session=client
+        )
+        return postgrest
 
 async def get_restaurants():
-    result = await postgrest.from_("restaurants").select("*").execute()
+    client = await get_client()
+    result = await client.from_("restaurants").select("*").execute()
     return result.data
 
 async def add_restaurant_to_db(name):
-    await postgrest.from_("restaurants").insert({
+    client = await get_client()
+    await client.from_("restaurants").insert({
         "name": name,
         "created_at": datetime.utcnow().isoformat()
     }).execute()
 
 async def delete_restaurant_from_db(id):
-    await postgrest.from_("restaurants").delete().eq("id", id).execute()
+    client = await get_client()
+    await client.from_("restaurants").delete().eq("id", id).execute()
+
+def run_async(coro):
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
 
 @app.route('/')
 def index():
-    restaurants = asyncio.run(get_restaurants())
+    restaurants = run_async(get_restaurants())
     return render_template('index.html', restaurants=restaurants)
 
 @app.route('/add', methods=['POST'])
 def add_restaurant():
     name = request.form['name']
-    asyncio.run(add_restaurant_to_db(name))
+    run_async(add_restaurant_to_db(name))
     return redirect(url_for('index'))
 
 @app.route('/delete/<int:id>')
 def delete_restaurant(id):
-    asyncio.run(delete_restaurant_from_db(id))
+    run_async(delete_restaurant_from_db(id))
     return redirect(url_for('index'))
 
 @app.route('/spin')
 def spin_roulette():
-    restaurants = asyncio.run(get_restaurants())
+    restaurants = run_async(get_restaurants())
     
     if not restaurants:
         return jsonify({'error': 'No restaurants added yet!'})
