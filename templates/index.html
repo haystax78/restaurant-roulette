@@ -91,109 +91,52 @@
 
 <style>
 .confetti {
-    position: absolute;
+    position: fixed;
     width: 8px;
     height: 8px;
-    z-index: 9999;
-    will-change: transform;
+    z-index: 1000;
+    animation: confetti-fall linear forwards;
 }
 
-@keyframes confettiPath {
+@keyframes confetti-fall {
     0% {
-        transform: translate(0, 0) rotate(0deg);
-        opacity: 1;
-    }
-    30% {
+        transform: translateY(-10vh) rotate(0deg);
         opacity: 1;
     }
     100% {
-        transform: translate(var(--final-x), var(--final-y)) rotate(var(--rotation));
+        transform: translateY(100vh) rotate(360deg);
         opacity: 0;
     }
 }
 </style>
 
 <script>
-function createConfetti(sourceElement) {
+function createConfetti() {
     const colors = ['#ff4136', '#2ecc40', '#0074d9', '#ffdc00', '#b10dc9', '#ff851b'];
-    const rect = sourceElement.getBoundingClientRect();
-    const startX = rect.left + rect.width / 2;
-    const startY = rect.top + rect.height / 2;
-    
     const confettiContainer = document.createElement('div');
     confettiContainer.style.position = 'fixed';
-    confettiContainer.style.left = '0';
     confettiContainer.style.top = '0';
+    confettiContainer.style.left = '0';
     confettiContainer.style.width = '100%';
     confettiContainer.style.height = '100%';
     confettiContainer.style.pointerEvents = 'none';
-    confettiContainer.style.zIndex = '9999';
+    confettiContainer.style.zIndex = '1000';
     document.body.appendChild(confettiContainer);
 
-    const numConfetti = 100;
-    const spread = 45; // half angle of the cone in degrees
-    const minInitialVelocity = 800; // minimum initial velocity in pixels per second
-    const maxInitialVelocity = 1000; // maximum initial velocity
-    const gravity = 2000; // pixels per second squared
-    const drag = 0.98; // air resistance factor (1 = no drag, 0 = maximum drag)
-    
-    for (let i = 0; i < numConfetti; i++) {
+    for (let i = 0; i < 150; i++) {
         const confetti = document.createElement('div');
         confetti.className = 'confetti';
-        
-        // Set initial position
-        confetti.style.left = `${startX}px`;
-        confetti.style.top = `${startY}px`;
+        confetti.style.left = Math.random() * 100 + 'vw';
         confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        
-        // Calculate initial velocity and angle
-        // Angle is now relative to straight up (0 degrees)
-        const angle = (-spread + Math.random() * spread * 2) * (Math.PI / 180);
-        const velocity = minInitialVelocity + Math.random() * (maxInitialVelocity - minInitialVelocity);
-        
-        // Calculate velocity components
-        // Now sin(angle) affects Y (up/down) and cos(angle) affects X (left/right)
-        const vx = Math.sin(angle) * velocity;
-        const vy = -Math.cos(angle) * velocity; // Negative because we want to go up initially
-        
-        // Calculate position over time with physics
-        const airTime = 2.0; // animation duration in seconds
-        const steps = 100; // increase steps for smoother simulation
-        const dt = airTime / steps;
-        
-        let x = 0;
-        let y = 0;
-        let velocityX = vx;
-        let velocityY = vy;
-        
-        // Simulate the full path to get final position
-        for (let step = 0; step < steps; step++) {
-            // Update velocities first
-            velocityX *= drag;
-            velocityY *= drag;
-            velocityY += gravity * dt; // Add gravity to vertical velocity
-            
-            // Update positions
-            x += velocityX * dt;
-            y += velocityY * dt;
-        }
-        
-        // Set final position and rotation
-        const rotation = Math.random() * 720 - 360; // Random rotation between -360 and 360 degrees
-        confetti.style.setProperty('--final-x', `${x}px`);
-        confetti.style.setProperty('--final-y', `${y}px`);
-        confetti.style.setProperty('--rotation', `${rotation}deg`);
-        
-        // Apply animation with easing that starts fast and slows down
-        confetti.style.animation = `confettiPath ${airTime}s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`;
-        
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        confetti.style.animationDelay = (Math.random() * 2) + 's';
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
         confettiContainer.appendChild(confetti);
     }
 
-    // Clean up after animations complete
     setTimeout(() => {
         confettiContainer.remove();
-    }, 2100); // Slightly longer than animation duration
+    }, 7000);
 }
 
 document.getElementById('spinButton').addEventListener('click', function() {
@@ -228,11 +171,7 @@ document.getElementById('spinButton').addEventListener('click', function() {
                             <div class="alert alert-success result-animation">
                                 <h3 class="mb-0"> ${data.name} </h3>
                             </div>`;
-                        // Wait for the result element to be rendered
-                        setTimeout(() => {
-                            const resultElement = resultDiv.querySelector('.alert');
-                            createConfetti(resultElement);
-                        }, 50);
+                        createConfetti();
                     }
                     button.disabled = false;
                     drumRoll.style.display = 'none';
