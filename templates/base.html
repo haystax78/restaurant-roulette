@@ -155,8 +155,8 @@
                 if (!ticking) {
                     window.requestAnimationFrame(function() {
                         const currentScrollY = window.scrollY;
-                        const delta = currentScrollY - lastScrollY;
-                        background.style.transform = `translateY(${currentScrollY * 0.3}px)`;
+                        // Negative multiplier to make background follow scroll direction
+                        background.style.transform = `translateY(${currentScrollY * -0.3}px)`;
                         lastScrollY = currentScrollY;
                         ticking = false;
                     });
