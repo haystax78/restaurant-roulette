@@ -11,8 +11,6 @@ db = SQLAlchemy(app)
 class Restaurant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    notes = db.Column(db.Text)
-    rating = db.Column(db.Integer)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
 with app.app_context():
@@ -26,13 +24,9 @@ def index():
 @app.route('/add', methods=['POST'])
 def add_restaurant():
     name = request.form['name']
-    notes = request.form['notes']
-    rating = int(request.form['rating'])
-    
-    new_restaurant = Restaurant(name=name, notes=notes, rating=rating)
+    new_restaurant = Restaurant(name=name)
     db.session.add(new_restaurant)
     db.session.commit()
-    
     return redirect(url_for('index'))
 
 @app.route('/delete/<int:id>')
@@ -50,9 +44,7 @@ def spin_roulette():
     
     chosen = random.choice(restaurants)
     return jsonify({
-        'name': chosen.name,
-        'notes': chosen.notes,
-        'rating': chosen.rating
+        'name': chosen.name
     })
 
 if __name__ == '__main__':

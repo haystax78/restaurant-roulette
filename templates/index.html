@@ -53,10 +53,6 @@
         .restaurant h3 {
             margin: 0 0 10px 0;
         }
-        .rating {
-            color: #ffa500;
-            font-weight: bold;
-        }
         .delete-link {
             color: #ff4444;
             text-decoration: none;
@@ -128,15 +124,6 @@
 
         <form action="{{ url_for('add_restaurant') }}" method="POST">
             <input type="text" name="name" placeholder="Restaurant Name" required>
-            <textarea name="notes" placeholder="Notes (location, favorite dishes, etc.)" rows="3"></textarea>
-            <select name="rating" required>
-                <option value="">Select Rating</option>
-                <option value="1">1 - Poor</option>
-                <option value="2">2 - Fair</option>
-                <option value="3">3 - Good</option>
-                <option value="4">4 - Very Good</option>
-                <option value="5">5 - Excellent</option>
-            </select>
             <button type="submit">Add Restaurant</button>
         </form>
 
@@ -145,12 +132,9 @@
             <div class="restaurant">
                 <h3>
                     {{ restaurant.name }}
-                    <span class="rating">★ {{ restaurant.rating }}/5</span>
                     <a href="{{ url_for('delete_restaurant', id=restaurant.id) }}" class="delete-link" 
                        onclick="return confirm('Are you sure you want to delete this restaurant?')">Delete</a>
                 </h3>
-                <p>{{ restaurant.notes }}</p>
-                <small>Added: {{ restaurant.date_added.strftime('%Y-%m-%d') }}</small>
             </div>
             {% endfor %}
         </div>
@@ -163,7 +147,6 @@
             const resultContent = document.getElementById('result-content');
             const spinButton = document.querySelector('.spin-button');
 
-            // Show loading, hide result
             loading.style.display = 'block';
             result.style.display = 'none';
             spinButton.disabled = true;
@@ -176,12 +159,9 @@
                     } else {
                         resultContent.innerHTML = `
                             <h2>${data.name}</h2>
-                            <p class="rating">Rating: ${'★'.repeat(data.rating)}${'☆'.repeat(5-data.rating)}</p>
-                            <p>${data.notes || 'No additional notes'}</p>
                         `;
                     }
                     
-                    // Hide loading, show result
                     setTimeout(() => {
                         loading.style.display = 'none';
                         result.style.display = 'block';
