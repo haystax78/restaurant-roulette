@@ -13,20 +13,49 @@
             --bg-color: #2b2b2b;
             --card-bg: #333333;
             --text-color: #e0e0e0;
+            --checker-color1: #2b2b2b;
+            --checker-color2: #2d2d2d;
         }
         
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .background-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(45deg, var(--checker-color1) 25%, transparent 25%),
+                linear-gradient(-45deg, var(--checker-color1) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, var(--checker-color1) 75%),
+                linear-gradient(-45deg, transparent 75%, var(--checker-color1) 75%);
+            background-size: 40px 40px;
+            background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+            z-index: -1;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
         }
         
         .container {
             max-width: 960px;
+            position: relative;
         }
         
         .card {
             background-color: var(--card-bg);
             border: 1px solid #444;
+            backdrop-filter: blur(5px);
         }
         
         .card-header {
@@ -106,9 +135,30 @@
     </style>
 </head>
 <body>
-    {% block content %}{% endblock %}
+    <div class="background-pattern"></div>
+    <div class="content-wrapper">
+        {% block content %}{% endblock %}
+    </div>
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Parallax Background Effect -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const background = document.querySelector('.background-pattern');
+            let lastScrollY = window.scrollY;
+            
+            window.addEventListener('scroll', function() {
+                const currentScrollY = window.scrollY;
+                const delta = currentScrollY - lastScrollY;
+                const translateY = parseFloat(background.style.transform.replace('translateY(', '').replace('px)', '') || 0);
+                
+                // Move the background at half the scroll speed
+                background.style.transform = `translateY(${translateY + (delta * 0.5)}px)`;
+                lastScrollY = currentScrollY;
+            });
+        });
+    </script>
 </body>
 </html>
