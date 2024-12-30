@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 import random
 from dotenv import load_dotenv
-from supabase import create_client
+from supabase import create_client, Client
 
 load_dotenv()
 
