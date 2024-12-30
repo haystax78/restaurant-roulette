@@ -98,12 +98,17 @@
     will-change: transform;
 }
 
-@keyframes gravity {
+@keyframes confettiPath {
     0% {
-        transform: translateY(0) translateX(0) rotate(0deg);
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+    30% {
+        opacity: 1;
     }
     100% {
-        transform: translateY(1000px) translateX(var(--final-x)) rotate(360deg);
+        transform: translate(var(--final-x), var(--final-y)) rotate(var(--rotation));
+        opacity: 0;
     }
 }
 </style>
@@ -115,7 +120,6 @@ function createConfetti(sourceElement) {
     const startX = rect.left + rect.width / 2;
     const startY = rect.top + rect.height / 2;
     
-    // Create container relative to the source element
     const confettiContainer = document.createElement('div');
     confettiContainer.style.position = 'fixed';
     confettiContainer.style.left = '0';
@@ -127,46 +131,65 @@ function createConfetti(sourceElement) {
     document.body.appendChild(confettiContainer);
 
     const numConfetti = 100;
-    const gravity = 800; // pixels per second squared
-    const initialSpeed = 600; // pixels per second
-    const spread = 45; // degrees (half of 90 degree cone)
+    const spread = 45; // half angle of the cone in degrees
+    const minInitialVelocity = 800; // minimum initial velocity in pixels per second
+    const maxInitialVelocity = 1000; // maximum initial velocity
+    const gravity = 1500; // pixels per second squared
+    const drag = 0.98; // air resistance factor (1 = no drag, 0 = maximum drag)
     
     for (let i = 0; i < numConfetti; i++) {
         const confetti = document.createElement('div');
         confetti.className = 'confetti';
         
-        // Initial position at the source
-        confetti.style.left = startX + 'px';
-        confetti.style.top = startY + 'px';
+        // Set initial position
+        confetti.style.left = `${startX}px`;
+        confetti.style.top = `${startY}px`;
         confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
         
-        // Calculate initial trajectory
-        const angle = (-spread + Math.random() * (spread * 2)) * (Math.PI / 180);
-        const velocity = (initialSpeed * 0.8) + (Math.random() * initialSpeed * 0.4);
+        // Calculate initial velocity and angle
+        const angle = (-spread + Math.random() * spread * 2) * (Math.PI / 180);
+        const velocity = minInitialVelocity + Math.random() * (maxInitialVelocity - minInitialVelocity);
+        
+        // Initial velocity components (negative vy means upward movement)
         const vx = Math.sin(angle) * velocity;
-        const vy = -Math.cos(angle) * velocity; // Negative because Y increases downward
+        const vy = -Math.cos(angle) * velocity; // Negative for upward movement
         
-        // Calculate animation duration based on physics
-        // Time to reach highest point: vy / gravity
-        // Time to fall back down: sqrt(2 * height / gravity)
-        const timeToTop = -vy / gravity;
-        const maxHeight = (-vy * -vy) / (2 * gravity);
-        const totalTime = timeToTop + Math.sqrt(2 * (maxHeight + 1000) / gravity);
+        // Calculate final position using projectile motion equations
+        const airTime = 2.0; // animation duration in seconds
+        const steps = 60; // number of steps to simulate
+        const dt = airTime / steps;
         
-        // Calculate final X position
-        const finalX = vx * totalTime;
-        confetti.style.setProperty('--final-x', `${finalX}px`);
+        let currentVx = vx;
+        let currentVy = vy;
+        let currentX = 0;
+        let currentY = 0;
+        
+        // Simulate motion with drag and gravity
+        for (let step = 0; step < steps; step++) {
+            currentVx *= drag;
+            currentVy *= drag;
+            currentVy += gravity * dt;
+            
+            currentX += currentVx * dt;
+            currentY += currentVy * dt;
+        }
+        
+        // Set final position and rotation
+        const rotation = Math.random() * 720 - 360; // Random rotation between -360 and 360 degrees
+        confetti.style.setProperty('--final-x', `${currentX}px`);
+        confetti.style.setProperty('--final-y', `${currentY}px`);
+        confetti.style.setProperty('--rotation', `${rotation}deg`);
         
         // Apply animation
-        confetti.style.animation = `gravity ${totalTime}s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`;
+        confetti.style.animation = `confettiPath ${airTime}s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`;
         
         confettiContainer.appendChild(confetti);
     }
 
-    // Clean up after the longest animation
+    // Clean up after animations complete
     setTimeout(() => {
         confettiContainer.remove();
-    }, 5000);
+    }, 2100); // Slightly longer than animation duration
 }
 
 document.getElementById('spinButton').addEventListener('click', function() {
