@@ -65,12 +65,67 @@
         .delete-link:hover {
             text-decoration: underline;
         }
+        .roulette-section {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .spin-button {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .spin-button:hover {
+            transform: scale(1.05);
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .result h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        .loading:after {
+            content: "🎲";
+            animation: dice 1s infinite;
+            font-size: 2em;
+        }
+        @keyframes dice {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Restaurant Roulette</h1>
         
+        <div class="roulette-section">
+            <button class="spin-button" onclick="spinRoulette()">Spin the Restaurant Roulette! 🎲</button>
+            <div class="loading"></div>
+            <div class="result">
+                <h3>Your destination awaits...</h3>
+                <div id="result-content"></div>
+            </div>
+        </div>
+
         <form action="{{ url_for('add_restaurant') }}" method="POST">
             <input type="text" name="name" placeholder="Restaurant Name" required>
             <textarea name="notes" placeholder="Notes (location, favorite dishes, etc.)" rows="3"></textarea>
@@ -100,5 +155,46 @@
             {% endfor %}
         </div>
     </div>
+
+    <script>
+        function spinRoulette() {
+            const loading = document.querySelector('.loading');
+            const result = document.querySelector('.result');
+            const resultContent = document.getElementById('result-content');
+            const spinButton = document.querySelector('.spin-button');
+
+            // Show loading, hide result
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            spinButton.disabled = true;
+
+            fetch('/spin')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        resultContent.innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        resultContent.innerHTML = `
+                            <h2>${data.name}</h2>
+                            <p class="rating">Rating: ${'★'.repeat(data.rating)}${'☆'.repeat(5-data.rating)}</p>
+                            <p>${data.notes || 'No additional notes'}</p>
+                        `;
+                    }
+                    
+                    // Hide loading, show result
+                    setTimeout(() => {
+                        loading.style.display = 'none';
+                        result.style.display = 'block';
+                        spinButton.disabled = false;
+                    }, 1000);
+                })
+                .catch(error => {
+                    resultContent.innerHTML = '<p>Something went wrong. Please try again!</p>';
+                    loading.style.display = 'none';
+                    result.style.display = 'block';
+                    spinButton.disabled = false;
+                });
+        }
+    </script>
 </body>
 </html>

@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import random
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurants.db'
@@ -40,6 +41,19 @@ def delete_restaurant(id):
     db.session.delete(restaurant)
     db.session.commit()
     return redirect(url_for('index'))
+
+@app.route('/spin')
+def spin_roulette():
+    restaurants = Restaurant.query.all()
+    if not restaurants:
+        return jsonify({'error': 'No restaurants added yet!'})
+    
+    chosen = random.choice(restaurants)
+    return jsonify({
+        'name': chosen.name,
+        'notes': chosen.notes,
+        'rating': chosen.rating
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
