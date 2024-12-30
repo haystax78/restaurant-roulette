@@ -5,7 +5,6 @@ import random
 import asyncio
 from dotenv import load_dotenv
 from postgrest import AsyncPostgrestClient
-import httpx
 
 load_dotenv()
 
@@ -13,33 +12,25 @@ app = Flask(__name__)
 
 # Initialize PostgREST client
 postgrest_url = f"{os.getenv('SUPABASE_URL')}/rest/v1"
-
-async def get_client():
-    async with httpx.AsyncClient() as client:
-        postgrest = AsyncPostgrestClient(
-            base_url=postgrest_url,
-            headers={
-                "apikey": os.getenv('SUPABASE_KEY'),
-                "Authorization": f"Bearer {os.getenv('SUPABASE_KEY')}"
-            },
-            session=client
-        )
-        return postgrest
+client = AsyncPostgrestClient(
+    base_url=postgrest_url,
+    headers={
+        "apikey": os.getenv('SUPABASE_KEY'),
+        "Authorization": f"Bearer {os.getenv('SUPABASE_KEY')}"
+    }
+)
 
 async def get_restaurants():
-    client = await get_client()
     result = await client.from_("restaurants").select("*").execute()
     return result.data
 
 async def add_restaurant_to_db(name):
-    client = await get_client()
     await client.from_("restaurants").insert({
         "name": name,
         "created_at": datetime.utcnow().isoformat()
     }).execute()
 
 async def delete_restaurant_from_db(id):
-    client = await get_client()
     await client.from_("restaurants").delete().eq("id", id).execute()
 
 def run_async(coro):
