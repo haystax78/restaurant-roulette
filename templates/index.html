@@ -134,7 +134,7 @@ function createConfetti(sourceElement) {
     const spread = 45; // half angle of the cone in degrees
     const minInitialVelocity = 800; // minimum initial velocity in pixels per second
     const maxInitialVelocity = 1000; // maximum initial velocity
-    const gravity = 1500; // pixels per second squared
+    const gravity = 2000; // pixels per second squared
     const drag = 0.98; // air resistance factor (1 = no drag, 0 = maximum drag)
     
     for (let i = 0; i < numConfetti; i++) {
@@ -147,40 +147,44 @@ function createConfetti(sourceElement) {
         confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
         
         // Calculate initial velocity and angle
+        // Angle is now relative to straight up (0 degrees)
         const angle = (-spread + Math.random() * spread * 2) * (Math.PI / 180);
         const velocity = minInitialVelocity + Math.random() * (maxInitialVelocity - minInitialVelocity);
         
-        // Initial velocity components (negative vy means upward movement)
+        // Calculate velocity components
+        // Now sin(angle) affects Y (up/down) and cos(angle) affects X (left/right)
         const vx = Math.sin(angle) * velocity;
-        const vy = -Math.cos(angle) * velocity; // Negative for upward movement
+        const vy = -Math.cos(angle) * velocity; // Negative because we want to go up initially
         
-        // Calculate final position using projectile motion equations
+        // Calculate position over time with physics
         const airTime = 2.0; // animation duration in seconds
-        const steps = 60; // number of steps to simulate
+        const steps = 100; // increase steps for smoother simulation
         const dt = airTime / steps;
         
-        let currentVx = vx;
-        let currentVy = vy;
-        let currentX = 0;
-        let currentY = 0;
+        let x = 0;
+        let y = 0;
+        let velocityX = vx;
+        let velocityY = vy;
         
-        // Simulate motion with drag and gravity
+        // Simulate the full path to get final position
         for (let step = 0; step < steps; step++) {
-            currentVx *= drag;
-            currentVy *= drag;
-            currentVy += gravity * dt;
+            // Update velocities first
+            velocityX *= drag;
+            velocityY *= drag;
+            velocityY += gravity * dt; // Add gravity to vertical velocity
             
-            currentX += currentVx * dt;
-            currentY += currentVy * dt;
+            // Update positions
+            x += velocityX * dt;
+            y += velocityY * dt;
         }
         
         // Set final position and rotation
         const rotation = Math.random() * 720 - 360; // Random rotation between -360 and 360 degrees
-        confetti.style.setProperty('--final-x', `${currentX}px`);
-        confetti.style.setProperty('--final-y', `${currentY}px`);
+        confetti.style.setProperty('--final-x', `${x}px`);
+        confetti.style.setProperty('--final-y', `${y}px`);
         confetti.style.setProperty('--rotation', `${rotation}deg`);
         
-        // Apply animation
+        // Apply animation with easing that starts fast and slows down
         confetti.style.animation = `confettiPath ${airTime}s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`;
         
         confettiContainer.appendChild(confetti);
