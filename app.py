@@ -3,9 +3,20 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 import random
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurants.db'
+
+# Use PostgreSQL URL from environment variable, fall back to SQLite for local development
+database_url = os.getenv('DATABASE_URL', 'sqlite:///restaurants.db')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 class Restaurant(db.Model):
